@@ -12,8 +12,8 @@ import (
 func ignoreStaticPath() {
 	//透明static
 	//beego框架默认放在static目录下面
-	//通过下面设置静态路径
-	beego.SetStaticPath("group1/M00/","fdfs/storage_data/data/")
+	//通过下面设置静态路径,重定向
+	//beego.SetStaticPath("group1/M00/","static/upload/avatar")
 
 	//beego.InsertFilter实现路由过滤
 	//参数分别为路由规则、执行过滤的地方(BeforeRouter 寻找路由之前)、跳转的方法、还有一个可选参数默认为false(过滤输出后仍执行其他过滤)
