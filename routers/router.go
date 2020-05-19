@@ -19,6 +19,15 @@ func init() {
 	beego.Router("/api/v1.0/sessions", &controllers.SessionController{},"post:UserLogin")
 	//上传头像
 	beego.Router("/api/v1.0/user/avatar", &controllers.UserController{},"post:PostAvatar")
-
+	//修改用户名
+	beego.Router("/api/v1.0/user/name", &controllers.UserController{},"put:UpdateName")
+	//获得用户信息
+	beego.Router("/api/v1.0/user", &controllers.UserController{},"get:GetUserName")
+	//实名认证
+	beego.Router("/api/v1.0/user/auth", &controllers.UserController{},"get:GetAuth;post:UserAuth")
+	//查询房源信息
+	beego.Router("/api/v1.0/user/houses", &controllers.HousesController{},"get:GetHouses")
+	//发布房源信息
+	beego.Router("/api/v1.0/houses", &controllers.HousesController{},"post:PostHouse")
 }
 

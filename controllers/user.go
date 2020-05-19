@@ -43,6 +43,8 @@ func (c *UserController) UserRigster(){
 	//在注册结束后，set session
 	//登录时就可以get session
 	c.SetSession("name",user.Name)
+	c.SetSession("user_id",user.Id)
+	c.SetSession("mobile",user.Mobile)
 }
 //用户注册的步骤
 /*
@@ -120,4 +122,110 @@ func (c *UserController)PostAvatar(){
 	urlmap:=make(map[string]string)
 	urlmap["avatar_url"]="http://192.168.43.166:8080/static/upload/avatar/"+c.GetSession("name").(string)+"/"+fileheader.Filename
 	resp["data"]=urlmap
+}
+//更新用户名
+func (c *UserController)UpdateName(){
+	resp:=make(map[string]interface{})
+	defer c.RetData(resp)
+	resp["errno"]=models.RECODE_OK
+	resp["errmsg"]=models.RecodeText(models.RECODE_OK)
+
+	//1从session获取用户id
+	var user models.User
+	user.Id=c.GetSession("user_id").(int)
+
+	//2根据前端传来的数据更新数据库的用户name字段
+	namedata:=make(map[string]string)
+	json.Unmarshal(c.Ctx.Input.RequestBody,&namedata)   //前端传过来map数据 "name":"123"
+	o:=orm.NewOrm()
+	readerr:=o.Read(&user)
+	if readerr!=nil{
+		resp["errno"]=models.RECODE_DBERR
+		resp["errmsg"]=models.RecodeText(models.RECODE_DBERR)
+		return
+	}
+	user.Name=namedata["name"]
+	_,uperr:=o.Update(&user)   //默认通过主键更新
+	if uperr!=nil{
+		resp["errno"]=models.RECODE_DBERR
+		resp["errmsg"]=models.RecodeText(models.RECODE_DBERR)
+		return
+	}
+	resp["data"]=namedata
+
+	//3更新session中的user_id、name字段
+	c.SetSession("name",user.Name)
+}
+//获取用户信息
+func (c *UserController)GetUserName(){
+	resp:=make(map[string]interface{})
+	defer c.RetData(resp)
+	resp["errno"]=models.RECODE_OK
+	resp["errmsg"]=models.RecodeText(models.RECODE_OK)
+
+	//1从session获取user_id
+	var user models.User
+	user.Id=c.GetSession("user_id").(int)  //为interface{}类型断言
+	//2从数据库查询该用户的完整信息
+	o:=orm.NewOrm()
+	queryerr:=o.QueryTable("user").Filter("id",user.Id).One(&user)
+	//queryerr:=o.Read(&user)
+	if queryerr!=nil{
+		resp["errno"]=models.RECODE_DBERR
+		resp["errmsg"]=models.RecodeText(models.RECODE_DBERR)
+		return
+	}
+	resp["data"]=user
+}
+//获取实名认证信息
+func (c *UserController)GetAuth() {
+	resp := make(map[string]interface{})
+	defer c.RetData(resp)
+	resp["errno"] = models.RECODE_OK
+	resp["errmsg"] = models.RecodeText(models.RECODE_OK)
+
+
+	var user models.User
+	user.Id=c.GetSession("user_id").(int)
+
+	//从数据库读取用户信息
+	o:=orm.NewOrm()
+	if rerr:=o.Read(&user);rerr!=nil{
+		resp["errno"]=models.RECODE_DBERR
+		resp["errmsg"]=models.RecodeText(models.RECODE_DBERR)
+		return
+	}
+	if user.Real_name==""||user.Id_card==""{
+		resp["errno"]=models.RECODE_NODATA
+		resp["errmsg"]=models.RecodeText(models.RECODE_NODATA)
+		return
+	}
+	resp["data"]=user
+
+}
+//进行实名认证
+func (c *UserController)UserAuth() {
+	resp := make(map[string]interface{})
+	defer c.RetData(resp)
+	resp["errno"] = models.RECODE_OK
+	resp["errmsg"] = models.RecodeText(models.RECODE_OK)
+
+	var user models.User
+	user.Id=c.GetSession("user_id").(int)
+	authdata:=make(map[string]string)
+	//利用前端数据更新数据库
+	json.Unmarshal(c.Ctx.Input.RequestBody,&authdata)
+	o:=orm.NewOrm()
+	if rerr:=o.Read(&user);rerr!=nil{
+		resp["errno"]=models.RECODE_DBERR
+		resp["errmsg"]=models.RecodeText(models.RECODE_DBERR)
+		return
+	}
+	user.Id_card=authdata["id_card"]
+	user.Real_name=authdata["real_name"]
+	if _,uperr:=o.Update(&user);uperr!=nil{
+		resp["errno"]=models.RECODE_DBERR
+		resp["errmsg"]=models.RecodeText(models.RECODE_DBERR)
+		return
+	}
 }
